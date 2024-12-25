@@ -1,0 +1,124 @@
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+from PIL import Image, ImageTk
+import os
+# Virus Signatures Database (Basic Example)
+VIRUS_SIGNATURES = {
+    "0fee746569f0ec9d1e073941a422b214": "Virus 1",
+    "9bba4ee40fc1f939fff061054cf330df": "Virus 2",
+    "834e58d1789b7d59c88578530fc6b452": "Virus 3",
+    "0ae923579d23319a92433cd5078fc8e7": "Virus 4",
+    "071a3a2d72c1033df945139e95b5fd61": "Virus 5",
+    "b25157b8fa8b2b42365fc4c47c3f3a90": "Virus 6",
+    "3daf9a14ffe954173a1b7cb766855824": "Virus 7",
+    "a9da2c07de94b6f332246f5bf2e987b4": "Virus 8",
+    "aea24efa7797a187bea2466ccf0a14f6": "Virus 9",
+    "ee82b869350b34b2c2f5d74af9d8a21d": "Virus 10",
+    "a579e56d9a20f93db40475d2a8bed2c6": "Virus 11",
+    "a579e56d9a20f93db40475d2a8bed2c6": "Virus 12",
+    "76a7f7eaad904b82013aec23d3efe414": "Virus 13",
+    "ceb5f52262e348be28af48811123af4e": "Virus 14",
+    "e9962c95e613358a30179c04a7eb2aeb" :"Virus 15",    
+}
+# Initialize main window
+root = tk.Tk()
+root.title("Black Skull Antivirus Scanner")
+root.geometry("900x600")
+root.config(bg="#2B2B2B")
+# Global Styles
+style = ttk.Style()
+style.theme_use("clam")
+style.configure("TButton", font=("Helvetica", 10, "bold"), foreground="white", padding=10, background="#157201")
+style.configure("TLabel", font=("Helvetica", 10), background="#2B2B2B", foreground="white")
+style.map("TButton", background=[("active", "#606060")])
+# Sidebar setup with gradient background
+sidebar = tk.Canvas(root, width=200, height=600, bg="#fff2ef", highlightthickness=0)
+sidebar.grid(row=0, column=0, rowspan=3, sticky="ns")
+# Adding a gradient to the sidebar
+def create_sidebar_gradient(canvas, color1, color2):
+    for i in range(600):
+        color = "#" + "".join([
+            hex(int(color1[j:j+2], 16) + i * (int(color2[j:j+2], 16) - int(color1[j:j+2], 16)) // 600)[2:].zfill(2)
+            for j in (0, 2, 4)
+        ])
+        canvas.create_line(0, i, 200, i, fill=color)
+create_sidebar_gradient(sidebar, "333333", "444444")
+# Title and Logo as Image
+try:
+    title_image_path = "title_image.png"  # Path to your title image
+    title_image = ImageTk.PhotoImage(Image.open(title_image_path).resize((400, 100), Image.ANTIALIAS))
+    title_label = tk.Label(root, image=title_image, bg="#2B2B2B")
+    title_label.place(x=250, y=30)
+except Exception as e:
+    print(f"Error loading title image: {e}")
+    title_label = tk.Label(root, text="Antivirus Scanner", font=("Helvetica", 20, "bold"), fg="#FFFFFF", bg="#2B2B2B")
+    title_label.place(x=250, y=30)
+# Optional logo image on sidebar
+try:
+    logo_img = ImageTk.PhotoImage(Image.open("logo.png").resize((80, 80)))
+    sidebar.create_image(100, 50, image=logo_img)
+except:
+    sidebar.create_text(100, 50, text="LOGO", fill="white", font=("Arial", 12))
+# Scan Logic
+def check_virus(file_path):
+    try:
+        with open(file_path, "r", errors="ignore") as file:
+            content = file.read()
+            for signature in VIRUS_SIGNATURES:
+                if signature in content:
+                    return True, signature
+    except Exception as e:
+        print(f"Error scanning file: {file_path}, {e}")
+    return False, None
+def scan_file():
+    file_path = filedialog.askopenfilename(title="Select File to Scan")
+    if file_path:
+        is_infected, signature = check_virus(file_path)
+        if is_infected:
+            messagebox.showerror("Scan Result", f"File: {file_path}\nResult: Infected\nSignature: {signature}")
+        else:
+            messagebox.showinfo("Scan Result", f"File: {file_path}\nResult: Clean")
+def scan_directory():
+    directory_path = filedialog.askdirectory(title="Select Directory to Scan")
+    if directory_path:
+        infected_files = []
+        for root_dir, _, files in os.walk(directory_path):
+            for file_name in files:
+                file_path = os.path.join(root_dir, file_name)
+                is_infected, signature = check_virus(file_path)
+                if is_infected:
+                    infected_files.append((file_path, signature))
+        if infected_files:
+            result_message = "\n".join([f"File: {file}\nSignature: {sig}" for file, sig in infected_files])
+            messagebox.showerror("Scan Result", f"Infected Files:\n{result_message}")
+        else:
+            messagebox.showinfo("Scan Result", "Directory is clean.")
+# Sidebar Navigation Buttons
+file_scan_button = ttk.Button(root, text="Scan File", command=scan_file)
+file_scan_button.place(x=40, y=150, width=120, height=40)
+directory_scan_button = ttk.Button(root, text="Scan Directory", command=scan_directory)
+directory_scan_button.place(x=40, y=200, width=120, height=40)
+# Main Content Section for Settings
+main_frame = tk.Frame(root, bg="#3A3A3A", bd=2, relief="solid")
+main_frame.place(x=250, y=100, width=620, height=400)
+# Frame title
+frame_title = tk.Label(main_frame, text="Scan Settings", font=("Helvetica", 16), bg="#3A3A3A", fg="#ffffff")
+frame_title.place(x=20, y=20)
+# Scan Filters
+filter_label = ttk.Label(main_frame, text="File Type Filter (e.g., .pdf, .txt):")
+filter_label.place(x=20, y=80)
+file_type_entry = ttk.Entry(main_frame, width=20)
+file_type_entry.place(x=200, y=80)
+size_label = ttk.Label(main_frame, text="Minimum File Size (MB):")
+size_label.place(x=20, y=120)
+size_entry = ttk.Entry(main_frame, width=20)
+size_entry.place(x=200, y=120)
+# Start Scan Button
+def start_scan():
+    messagebox.showinfo("Scanning", "Custom scan started based on filters...")
+start_scan_button = ttk.Button(main_frame, text="Start Scan", command=start_scan)
+start_scan_button.place(x=260, y=250, width=120, height=40)
+# Footer
+footer_label = tk.Label(root, text="Developed by Chitransh - 2024", font=("Arial", 8), bg="#2B2B2B", fg="white")
+footer_label.place(x=350, y=570)
+root.mainloop()
